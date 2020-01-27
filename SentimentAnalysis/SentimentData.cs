@@ -10,7 +10,7 @@ namespace SentimentAnalysis
         [LoadColumn(0)]
         public string SentimentText;
 
-        [LoadColumn(1), ColumnName("Label")]
+        [LoadColumn(1)]
         public bool Sentiment;
     }
 
@@ -22,6 +22,6 @@ namespace SentimentAnalysis
 
        // public float Probability { get; set; }
 
-        public float Score { get; set; }
+        public float[] Score { get; set; }
     }
 }

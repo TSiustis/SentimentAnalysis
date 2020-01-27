@@ -7,6 +7,8 @@ using Microsoft.ML.Data;
 using static Microsoft.ML.DataOperationsCatalog;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms.Text;
+using Microsoft.ML.Transforms;
+
 namespace SentimentAnalysis
 {
     class Program { 
@@ -18,17 +20,17 @@ namespace SentimentAnalysis
             TrainTestData splitDataView = LoadData(MLContext);
             Utility utility = new Utility();
 
-            Console.WriteLine("Using binary classification:\n");
-            ITransformer model = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet,"Binary");
-            EvaluateNonCalibrated(MLContext, model, splitDataView.TestSet);
-            UseModelWithSingleItem(MLContext, model);
-            UseModelWithBatchItems(MLContext, model);
+            //Console.WriteLine("Using binary classification:\n");
+            //ITransformer model = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet,"Binary");
+            //EvaluateNonCalibrated(MLContext, model, splitDataView.TestSet);
+            //UseModelWithSingleItem(MLContext, model);
+            //UseModelWithBatchItems(MLContext, model);
 
-            Console.WriteLine("Using SVM classification:\n");
-            ITransformer modelSvm = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "SVM");
-            EvaluateNonCalibrated(MLContext, modelSvm, splitDataView.TestSet);
-            UseModelWithSingleItem(MLContext, modelSvm);
-            UseModelWithBatchItems(MLContext, modelSvm);
+            //Console.WriteLine("Using SVM classification:\n");
+            //ITransformer modelSvm = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "SVM");
+            //EvaluateNonCalibrated(MLContext, modelSvm, splitDataView.TestSet);
+            //UseModelWithSingleItem(MLContext, modelSvm);
+            //UseModelWithBatchItems(MLContext, modelSvm);
 
             Console.WriteLine("Using Naive Bayes classification:\n");
             ITransformer modelBayes = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "naive");
@@ -59,7 +61,7 @@ namespace SentimentAnalysis
             Console.WriteLine("=============== Prediction Test of loaded model with multiple samples ===============");
             foreach (SentimentPrediction prediction in predictedResults)
             {
-                Console.WriteLine($"Sentiment: {prediction.SentimentText} | Prediction: {(Convert.ToBoolean(prediction.Prediction) ? "Positive" : "Negative")} ");
+                Console.WriteLine($"Sentiment: {prediction.SentimentText} | Prediction: {(Convert.ToBoolean(prediction.Prediction) ? "Positive" : "Negative ")}");
 
             }
             Console.WriteLine("=============== End of predictions ===============");
@@ -100,20 +102,23 @@ namespace SentimentAnalysis
         {
             Console.WriteLine("=============== Evaluating Model accuracy with Test data===============");
             IDataView predictions = model.Transform(splitTestSet);
-            BinaryClassificationMetrics metrics = mlContext.BinaryClassification.EvaluateNonCalibrated(predictions, "Label");
+            // BinaryClassificationMetrics metrics = mlContext.BinaryClassification.EvaluateNonCalibrated(predictions, "Label");
+            var metrics = mlContext.MulticlassClassification.Evaluate(predictions);
             Console.WriteLine();
             Console.WriteLine("Model quality metrics evaluation");
             Console.WriteLine("--------------------------------");
-            Console.WriteLine($"Accuracy: {metrics.Accuracy:P2}");
-            Console.WriteLine($"Auc: {metrics.AreaUnderRocCurve:P2}");
-            Console.WriteLine($"F1Score: {metrics.F1Score:P2}");
+           // Console.WriteLine($"Accuracy: {metrics.Accuracy:P2}");
+            //Console.WriteLine($"Auc: {metrics.AreaUnderRocCurve:P2}");
+            Console.WriteLine($"F1Score: {metrics.MicroAccuracy:P2}");
             Console.WriteLine("=============== End of model evaluation ===============");
         }
         public static TrainTestData LoadData(MLContext mlContext)
         {
             IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, separatorChar: '|', hasHeader:false);
- 
-            TrainTestData splitDataView = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+            TrainTestData splitDataView;
+            
+                splitDataView = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+       
             return splitDataView;
         }
     }

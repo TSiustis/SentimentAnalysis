@@ -3,6 +3,7 @@ using Microsoft.ML.Data;
 using Microsoft.ML.Trainers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -10,81 +11,8 @@ namespace SentimentAnalysis
 {
     public class Utility
     {
-        public void getSvmPrediction() {
-            var mlContext = new MLContext(seed: 0);
-
-            // Create a list of training data points.
-            var dataPoints = GenerateRandomDataPoints(1000);
-
-            // Convert the list of data points to an IDataView object, which is
-            // consumable by ML.NET API.
-            var trainingData = mlContext.Data.LoadFromEnumerable(dataPoints);
-
-            // Define trainer options.
-            var options = new LinearSvmTrainer.Options
-            {
-                BatchSize = 10,
-                PerformProjection = true,
-                NumberOfIterations = 10
-            };
-
-            // Define the trainer.
-            var pipeline = mlContext.BinaryClassification.Trainers
-                .LinearSvm(options);
-
-            // Train the model.
-            var model = pipeline.Fit(trainingData);
-
-            // Create testing data. Use different random seed to make it different
-            // from training data.
-            var testData = mlContext.Data
-                .LoadFromEnumerable(GenerateRandomDataPoints(500, seed: 123));
-
-            // Run the model on test data set.
-            var transformedTestData = model.Transform(testData);
-
-            // Convert IDataView object to a list.
-            var predictions = mlContext.Data
-                .CreateEnumerable<Prediction>(transformedTestData,
-                reuseRowObject: false).ToList();
-
-            // Print 5 predictions.
-            foreach (var p in predictions.Take(5))
-                Console.WriteLine($"Label: {p.Label}, "
-                    + $"Prediction: {p.PredictedLabel}");
-
-            // Expected output:
-            //   Label: True, Prediction: True
-            //   Label: False, Prediction: True
-            //   Label: True, Prediction: True
-            //   Label: True, Prediction: True
-            //   Label: False, Prediction: False
-
-            // Evaluate the overall metrics.
-            var metrics = mlContext.BinaryClassification
-                .EvaluateNonCalibrated(transformedTestData);
-
-            PrintMetrics(metrics);
-
-            // Expected output:
-            //   Accuracy: 0.85
-            //   AUC: 0.95
-            //   F1 Score: 0.86
-            //   Negative Precision: 0.91
-            //   Negative Recall: 0.80
-            //   Positive Precision: 0.80
-            //   Positive Recall: 0.92
-            //
-            //   TEST POSITIVE RATIO:    0.4760 (238.0/(238.0+262.0))
-            //   Confusion table
-            //             ||======================
-            //   PREDICTED || positive | negative | Recall
-            //   TRUTH     ||======================
-            //    positive ||      218 |       20 | 0.9160
-            //    negative ||       53 |      209 | 0.7977
-            //             ||======================
-            //   Precision ||   0.8044 |   0.9127 |
-        }
+        static readonly string _dataPath = Path.Combine(Environment.CurrentDirectory, "Data", "dataset.txt");
+       
         public  ITransformer BuildAndTrainModel(MLContext mlContext, IDataView splitTrainSet,String classification)
         {
             classification = classification.ToLower();
@@ -95,10 +23,10 @@ namespace SentimentAnalysis
                 Console.WriteLine("=============== Create and Train the Model ===============");
                 var model = estimator.Fit(splitTrainSet);
 
-                //var crossValidationResults = mlContext.BinaryClassification.CrossValidateNonCalibrated(splitTrainSet, estimator, numberOfFolds: 5, labelColumnName: "Label");
-                //Console.WriteLine("=============== End of training ===============");
-                //Console.WriteLine();
-                //Console.WriteLine(crossValidationResults.ToString());
+                var crossValidationResults = mlContext.BinaryClassification.CrossValidateNonCalibrated(splitTrainSet, estimator, numberOfFolds: 5, labelColumnName: "Label");
+                Console.WriteLine("=============== End of training ===============");
+                Console.WriteLine();
+                Console.WriteLine(crossValidationResults.ToString());
 
                 return model;
             }
@@ -110,29 +38,40 @@ namespace SentimentAnalysis
                 var model = svmEstimator.Fit(splitTrainSet);
                 Console.WriteLine("=============== End of training SVM ===============");
                 Console.WriteLine();
-                var cvResults = mlContext.Regression.CrossValidate(splitTrainSet, svmEstimator, numberOfFolds: 5);
-                ITransformer[] models = cvResults
-            .OrderByDescending(fold => fold.Metrics.RSquared)
-            .Select(fold => fold.Model)
-            .ToArray();
-
-                // Get Top Model
-                ITransformer topModel = models[0];
-                Console.WriteLine(topModel);
+            
                 return model;
             }
             else if (classification.Equals("naive"))
             {
-                var naiveEstimator = mlContext.Transforms.Conversion.MapValueToKey(nameof(SentimentData.SentimentText))
-             .Append(mlContext.MulticlassClassification.Trainers.NaiveBayes());
-                //var naiveEstimator = mlContext.Transforms.Conversion
-                //.MapValueToKey(nameof(SentimentData.SentimentText))
-                //// Apply NaiveBayes multiclass trainer.
-                //.Append(mlContext.MulticlassClassification.Trainers
-               // .NaiveBayes());
-                Console.WriteLine("=============== Create and Train the Model  Naive Bayes ===============");
+                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, separatorChar: '|', hasHeader: false);
+                var naiveEstimator = mlContext.Transforms.Text.FeaturizeText("Features", nameof(SentimentData.SentimentText))
+            .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "Label", inputColumnName: nameof(SentimentData.Sentiment)))
+             .Append(mlContext.MulticlassClassification.Trainers.NaiveBayes(labelColumnName: "Label", featureColumnName: "Features"))
+             .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+               
+                Console.WriteLine("=============== Create and Train the Model  Naive Bayes With Split Train Set ===============");
+                
                 var model = naiveEstimator.Fit(splitTrainSet);
-                Console.WriteLine("=============== End of training Naive Bayes ===============");
+                Console.WriteLine("=============== End of training Naive Bayes With Split Train Set ===============");
+                Console.WriteLine();
+
+                return model;
+            }
+            else if (classification.Equals("crossbayes"))
+            {
+                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, separatorChar: '|', hasHeader: false);
+                var naiveEstimator = mlContext.Transforms.Text.FeaturizeText("Features", nameof(SentimentData.SentimentText))
+             .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "Label", inputColumnName: nameof(SentimentData.Sentiment)))
+              .Append(mlContext.MulticlassClassification.Trainers.NaiveBayes(labelColumnName: "Label", featureColumnName: "Features"))
+              .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
+
+                Console.WriteLine("=============== Create and Train the Model  Naive Bayes With Cross-validation ===============");
+                var crossValidationResults = mlContext.MulticlassClassification.CrossValidate(data: dataView, estimator: naiveEstimator, numberOfFolds: 6, labelColumnName: "Label");
+                Console.WriteLine("=============== Cross-validating to get model's accuracy metrics ===============");
+
+                Console.WriteLine(crossValidationResults.ToString());
+                var model = naiveEstimator.Fit(dataView);
+                Console.WriteLine("=============== End of training Naive Bayes With crossValidation ===============");
                 Console.WriteLine();
 
                 return model;
