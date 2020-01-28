@@ -22,6 +22,18 @@ namespace SentimentAnalysis
 
        // public float Probability { get; set; }
 
+        //public float[] Score1 { get; set; }
+        public float Score { get; set; }
+    }
+    public class SentimentPredictionMulti : SentimentData
+    {
+
+        [ColumnName("PredictedLabel")]
+        public bool Prediction { get; set; }
+
+        // public float Probability { get; set; }
+
+        //public float[] Score1 { get; set; }
         public float[] Score { get; set; }
     }
 }

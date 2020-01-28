@@ -20,11 +20,11 @@ namespace SentimentAnalysis
             {
                 var estimator = mlContext.Transforms.Text.FeaturizeText(outputColumnName: "Features", inputColumnName: nameof(SentimentData.SentimentText))
                 .Append(mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(labelColumnName: "Label", featureColumnName: "Features"));
-                Console.WriteLine("=============== Create and Train the Model ===============");
+                Console.WriteLine("=============== Create and Train the Model Binary ===============");
                 var model = estimator.Fit(splitTrainSet);
 
                 var crossValidationResults = mlContext.BinaryClassification.CrossValidateNonCalibrated(splitTrainSet, estimator, numberOfFolds: 5, labelColumnName: "Label");
-                Console.WriteLine("=============== End of training ===============");
+                Console.WriteLine("=============== End of training Binary ===============");
                 Console.WriteLine();
                 Console.WriteLine(crossValidationResults.ToString());
 
@@ -68,7 +68,7 @@ namespace SentimentAnalysis
                 Console.WriteLine("=============== Create and Train the Model  Naive Bayes With Cross-validation ===============");
                 var crossValidationResults = mlContext.MulticlassClassification.CrossValidate(data: dataView, estimator: naiveEstimator, numberOfFolds: 6, labelColumnName: "Label");
                 Console.WriteLine("=============== Cross-validating to get model's accuracy metrics ===============");
-
+                
                 Console.WriteLine(crossValidationResults.ToString());
                 var model = naiveEstimator.Fit(dataView);
                 Console.WriteLine("=============== End of training Naive Bayes With crossValidation ===============");
