@@ -18,6 +18,7 @@ namespace SentimentAnalysis
         {
             MLContext MLContext = new MLContext();
             TrainTestData splitDataView = LoadData(MLContext);
+            TrainTestData splitDataViewBayes = LoadData(MLContext);
             Utility utility = new Utility();
 
             Console.WriteLine("Using binary classification:\n");
@@ -33,16 +34,16 @@ namespace SentimentAnalysis
             UseModelWithBatchItems(MLContext, modelSvm);
 
             Console.WriteLine("Using Naive Bayes classification:\n");
-            ITransformer modelBayes = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "naive");
-            EvaluateMultiClass(MLContext, modelBayes, splitDataView.TestSet);
+            ITransformer modelBayes = utility.BuildAndTrainModel(MLContext, splitDataViewBayes.TrainSet, "naive");
+            EvaluateMultiClass(MLContext, modelBayes, splitDataViewBayes.TestSet);
             UseModelWithSingleItemMulti(MLContext, modelBayes);
             UseModelWithBatchItemsMulti(MLContext, modelBayes);
 
             Console.WriteLine("Using Naive Bayes classification with cross-validation:\n");
-            ITransformer modelBayesCross = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "crossbayes");
+            ITransformer modelBayesCross = utility.BuildAndTrainModel(MLContext, splitDataViewBayes.TrainSet, "crossbayes");
            // EvaluateNonCalibrated(MLContext, modelBayes, splitDataView.TestSet);
-            UseModelWithSingleItemMulti(MLContext, modelBayes);
-            UseModelWithBatchItemsMulti(MLContext, modelBayes);
+            UseModelWithSingleItemMulti(MLContext, modelBayesCross);
+            UseModelWithBatchItemsMulti(MLContext, modelBayesCross);
         }
         public static void UseModelWithBatchItemsMulti(MLContext mlContext, ITransformer model)
         {
@@ -186,6 +187,15 @@ namespace SentimentAnalysis
        
             return splitDataView;
         }
-      
+        public static TrainTestData LoadDataBayes(MLContext mlContext)
+        {
+            IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentDataBayes>(_dataPath, separatorChar: '|', hasHeader: false);
+            TrainTestData splitDataView;
+
+            splitDataView = mlContext.Data.TrainTestSplit(dataView, testFraction: 0.2);
+
+            return splitDataView;
+        }
+
     }
 }

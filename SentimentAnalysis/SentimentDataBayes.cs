@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SentimentAnalysis
 {
-    public class SentimentData
+    public class SentimentDataBayes
     {
         [LoadColumn(0)]
         public string SentimentText;
@@ -14,18 +14,7 @@ namespace SentimentAnalysis
         public bool Sentiment;
     }
 
-    public class SentimentPrediction : SentimentData
-    {
-
-        [ColumnName("PredictedLabel")]
-        public bool Prediction { get; set; }
-
-       // public float Probability { get; set; }
-
-        //public float[] Score1 { get; set; }
-        public float Score { get; set; }
-    }
-    public class SentimentPredictionMulti : SentimentData
+    public class SentimentPredictionBayes : SentimentDataBayes
     {
 
         [ColumnName("PredictedLabel")]
@@ -34,6 +23,6 @@ namespace SentimentAnalysis
         // public float Probability { get; set; }
 
         //public float[] Score1 { get; set; }
-        public float[] Score { get; set; }
+        public float Score { get; set; }
     }
 }

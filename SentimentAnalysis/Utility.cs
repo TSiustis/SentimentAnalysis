@@ -43,9 +43,9 @@ namespace SentimentAnalysis
             }
             else if (classification.Equals("naive"))
             {
-                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, separatorChar: '|', hasHeader: false);
-                var naiveEstimator = mlContext.Transforms.Text.FeaturizeText("Features", nameof(SentimentData.SentimentText))
-            .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "Label", inputColumnName: nameof(SentimentData.Sentiment)))
+                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentDataBayes>(_dataPath, separatorChar: '|', hasHeader: false);
+                var naiveEstimator = mlContext.Transforms.Text.FeaturizeText("Features", nameof(SentimentDataBayes.SentimentText))
+            .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "Label", inputColumnName: "Label"))
              .Append(mlContext.MulticlassClassification.Trainers.NaiveBayes(labelColumnName: "Label", featureColumnName: "Features"))
              .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
                
@@ -59,9 +59,9 @@ namespace SentimentAnalysis
             }
             else if (classification.Equals("crossbayes"))
             {
-                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, separatorChar: '|', hasHeader: false);
-                var naiveEstimator = mlContext.Transforms.Text.FeaturizeText("Features", nameof(SentimentData.SentimentText))
-             .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "Label", inputColumnName: nameof(SentimentData.Sentiment)))
+                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentDataBayes>(_dataPath, separatorChar: '|', hasHeader: false);
+                var naiveEstimator = mlContext.Transforms.Text.FeaturizeText("Features", nameof(SentimentDataBayes.SentimentText))
+             .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "Label", inputColumnName: nameof(SentimentDataBayes.Sentiment)))
               .Append(mlContext.MulticlassClassification.Trainers.NaiveBayes(labelColumnName: "Label", featureColumnName: "Features"))
               .Append(mlContext.Transforms.Conversion.MapKeyToValue("PredictedLabel"));
 
