@@ -8,6 +8,7 @@ using static Microsoft.ML.DataOperationsCatalog;
 using Microsoft.ML.Trainers;
 using Microsoft.ML.Transforms.Text;
 using Microsoft.ML.Transforms;
+using System.Text;
 
 namespace SentimentAnalysis
 {
@@ -20,30 +21,51 @@ namespace SentimentAnalysis
             TrainTestData splitDataView = LoadData(MLContext);
             TrainTestData splitDataViewBayes = LoadData(MLContext);
             Utility utility = new Utility();
+            for (int i = 0; i < 5; i++)
+            {
+                using (System.IO.StreamWriter file =
+                 new System.IO.StreamWriter(@"C:\Users\siust\OneDrive\Desktop\test.txt", true))
+                {
+                    file.WriteLine($"Iteration: {i}\n");
+                    file.WriteLine("Using binary classification:\n");
+                }
+                Console.WriteLine("Using binary classification:\n");
+                ITransformer model = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "Binary");
+                EvaluateNonCalibrated(MLContext, model, splitDataView.TestSet);
+                UseModelWithSingleItem(MLContext, model);
+                UseModelWithBatchItems(MLContext, model);
+                using (System.IO.StreamWriter file =
+                new System.IO.StreamWriter(@"C:\Users\siust\OneDrive\Desktop\test.txt", true))
+                {
+                    file.WriteLine("Using binary classification with cross-validation:\n");
+                }
+                Console.WriteLine("Using binary classification with cross-validation:\n");
+                ITransformer modelCross = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "Binary");
+                //  EvaluateNonCalibrated(MLContext, model, splitDataView.TestSet);
+                UseModelWithSingleItem(MLContext, model);
+                UseModelWithBatchItems(MLContext, model);
+                using (System.IO.StreamWriter file =
+                new System.IO.StreamWriter(@"C:\Users\siust\OneDrive\Desktop\test.txt", true))
+                {
+                    file.WriteLine("Using SVM classification:\n");
+                }
+                Console.WriteLine("Using SVM classification:\n");
+                ITransformer modelSvm = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "SVM");
+                EvaluateNonCalibrated(MLContext, modelSvm, splitDataView.TestSet);
+                UseModelWithSingleItem(MLContext, modelSvm);
+                UseModelWithBatchItems(MLContext, modelSvm);
+            }
+           // Console.WriteLine("Using Naive Bayes classification:\n");
+           // ITransformer modelBayes = utility.BuildAndTrainModel(MLContext, splitDataViewBayes.TrainSet, "naive");
+           // EvaluateMultiClass(MLContext, modelBayes, splitDataViewBayes.TestSet);
+           // UseModelWithSingleItemMulti(MLContext, modelBayes);
+           // UseModelWithBatchItemsMulti(MLContext, modelBayes);
 
-            Console.WriteLine("Using binary classification:\n");
-            ITransformer model = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "Binary");
-            EvaluateNonCalibrated(MLContext, model, splitDataView.TestSet);
-            UseModelWithSingleItem(MLContext, model);
-            UseModelWithBatchItems(MLContext, model);
-
-            Console.WriteLine("Using SVM classification:\n");
-            ITransformer modelSvm = utility.BuildAndTrainModel(MLContext, splitDataView.TrainSet, "SVM");
-            EvaluateNonCalibrated(MLContext, modelSvm, splitDataView.TestSet);
-            UseModelWithSingleItem(MLContext, modelSvm);
-            UseModelWithBatchItems(MLContext, modelSvm);
-
-            Console.WriteLine("Using Naive Bayes classification:\n");
-            ITransformer modelBayes = utility.BuildAndTrainModel(MLContext, splitDataViewBayes.TrainSet, "naive");
-            EvaluateMultiClass(MLContext, modelBayes, splitDataViewBayes.TestSet);
-            UseModelWithSingleItemMulti(MLContext, modelBayes);
-            UseModelWithBatchItemsMulti(MLContext, modelBayes);
-
-            Console.WriteLine("Using Naive Bayes classification with cross-validation:\n");
-            ITransformer modelBayesCross = utility.BuildAndTrainModel(MLContext, splitDataViewBayes.TrainSet, "crossbayes");
-           // EvaluateNonCalibrated(MLContext, modelBayes, splitDataView.TestSet);
-            UseModelWithSingleItemMulti(MLContext, modelBayesCross);
-            UseModelWithBatchItemsMulti(MLContext, modelBayesCross);
+           // Console.WriteLine("Using Naive Bayes classification with cross-validation:\n");
+           // ITransformer modelBayesCross = utility.BuildAndTrainModel(MLContext, splitDataViewBayes.TrainSet, "crossbayes");
+           //// EvaluateNonCalibrated(MLContext, modelBayes, splitDataView.TestSet);
+           // UseModelWithSingleItemMulti(MLContext, modelBayesCross);
+           // UseModelWithBatchItemsMulti(MLContext, modelBayesCross);
         }
         public static void UseModelWithBatchItemsMulti(MLContext mlContext, ITransformer model)
         {
@@ -163,6 +185,17 @@ namespace SentimentAnalysis
             Console.WriteLine($"Auc: {metrics.AreaUnderRocCurve:P2}");
             Console.WriteLine($"F1Score: {metrics.F1Score:P2}");
             Console.WriteLine("=============== End of model evaluation ===============");
+            StringBuilder writeFile = new StringBuilder();
+            writeFile.Append("Model quality metrics evaluation\n");
+            writeFile.Append($"Accuracy: {metrics.Accuracy:P2}");
+            writeFile.Append($"Auc: {metrics.AreaUnderRocCurve:P2}");
+            writeFile.Append($"F1Score: {metrics.F1Score:P2}");
+            writeFile.Append("=============== End of model evaluation ===============\n");
+            using (System.IO.StreamWriter file =
+            new System.IO.StreamWriter(@"C:\Users\siust\OneDrive\Desktop\test.txt", true))
+            {
+                file.WriteLine(writeFile);
+            }
         }
         public static void EvaluateMultiClass(MLContext mlContext, ITransformer model, IDataView splitTestSet)
         {

@@ -26,7 +26,34 @@ namespace SentimentAnalysis
                 var crossValidationResults = mlContext.BinaryClassification.CrossValidateNonCalibrated(splitTrainSet, estimator, numberOfFolds: 5, labelColumnName: "Label");
                 Console.WriteLine("=============== End of training Binary ===============");
                 Console.WriteLine();
-                Console.WriteLine(crossValidationResults.ToString());
+
+                return model;
+            }
+          else  if (classification.Equals("binarycross"))
+            {
+                IDataView dataView = mlContext.Data.LoadFromTextFile<SentimentData>(_dataPath, separatorChar: '|', hasHeader: false);
+                var estimator = mlContext.Transforms.Text.FeaturizeText(outputColumnName: "Features", inputColumnName: nameof(SentimentData.SentimentText))
+                .Append(mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(labelColumnName: "Label", featureColumnName: "Features"));
+                Console.WriteLine("=============== Create and Train the Model Binary With Cross-validation===============");
+                var crossValidationResults = mlContext.BinaryClassification.CrossValidateNonCalibrated(dataView, estimator, numberOfFolds: 5, labelColumnName: "Label");
+                Console.WriteLine();
+                Console.WriteLine("Model quality metrics evaluation");
+                Console.WriteLine("--------------------------------");
+                foreach (var item in crossValidationResults)
+                {
+                      
+                    Console.WriteLine($"Accuracy: {item.Metrics.Accuracy:P2}");
+                    Console.WriteLine($"Auc: {item.Metrics.AreaUnderRocCurve:P2}");
+                    Console.WriteLine($"F1Score: {item.Metrics.F1Score:P2}");
+
+                }
+
+                Console.WriteLine("=============== End of model evaluation ===============");
+                var model = estimator.Fit(dataView);
+               
+
+                Console.WriteLine("=============== End of training Binary With Cross-Validation ===============");
+                Console.WriteLine();
 
                 return model;
             }
