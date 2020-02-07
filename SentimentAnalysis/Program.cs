@@ -78,8 +78,20 @@ namespace SentimentAnalysis
     new SentimentData
     {
         SentimentText = "This is not a good show"
-    } };
-            IDataView batchComments = mlContext.Data.LoadFromEnumerable(sentiments);
+    } ,
+            new SentimentData
+            {
+                SentimentText = "This could have been better but it's alright"
+            },
+        new SentimentData
+    {
+        SentimentText = "Worst movie since Attack of The Clones"
+    },
+         new SentimentData {
+        SentimentText = "Wow!"
+    }
+};
+IDataView batchComments = mlContext.Data.LoadFromEnumerable(sentiments);
 
             IDataView predictions = model.Transform(batchComments);
 
@@ -123,7 +135,25 @@ namespace SentimentAnalysis
     new SentimentData
     {
         SentimentText = "This is not a good show"
-    } };
+    },
+    new SentimentData {
+        SentimentText = "This was a horrible meal"
+    },
+    new SentimentData
+    {
+        SentimentText = "This is not a good show"
+    } ,
+            new SentimentData
+            {
+                SentimentText = "This could have been better but it's alright"
+            },
+        new SentimentData
+    {
+        SentimentText = "Worst movie since Attack of The Clones"
+    },
+         new SentimentData {
+        SentimentText = "Wow!"
+     } };
     IDataView batchComments = mlContext.Data.LoadFromEnumerable(sentiments);
 
             IDataView predictions = model.Transform(batchComments);
@@ -156,6 +186,11 @@ namespace SentimentAnalysis
 
             Console.WriteLine("=============== End of Predictions ===============");
             Console.WriteLine();
+            using (System.IO.StreamWriter file =
+             new System.IO.StreamWriter(@"C:\Users\siust\OneDrive\Desktop\test.txt", true))
+            {
+                file.WriteLine($"Sentiment: {resultPrediction.SentimentText} | Prediction: {(Convert.ToBoolean(resultPrediction.Prediction) ? "Positive" : "Negative")}  "); ;
+            }
         }
      //   public static ITransformer BuildAndTrainModel(MLContext mlContext, IDataView splitTrainSet)
      //   {
